@@ -7,15 +7,15 @@
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Blockchain {
     public static LinkedList<Block> blockchain = new LinkedList<>();
     private static int hashZeros = 0; // The number of consecutive zeros required at the start of a hash. Initiated to 0, updated to maintain a hash duration between a min and max
-    public static int blockGoal; // The total number of blocks desired
+    public static int blockGoal; // The desired length of blockchain, updated every time new blocks are set to be mined
     private final static int hashTimeMin = 1;
     private final static int hashTimeMax = 2;
+
+    public static List<Message> messages = new ArrayList<>();
 
     // Given an instance of the Blockchain, mines for the next block to add to the Blockchain. Stops early if the next block is added by another call of createBlock before it succeeds.
     public synchronized static void createBlock(LinkedList<Block> bc) { // Synchronized to prevent simultaneous updating of the Blockchain
@@ -35,13 +35,15 @@ public class Blockchain {
         }
         int hashDuration = Math.toIntExact((System.currentTimeMillis() - start) / 1000);
         Objects.requireNonNull(bc.peekLast()).setHashingTime(Math.toIntExact(hashDuration));
-        if (!blockchain.isEmpty()) { // Ensure that adding the next block will keep the Blockchain valid - USE METHOD TO VALIDATE???
-            if (!StringUtil.applySha256(blockchain.peekLast().hashableString()).equals(Objects.requireNonNull(bc.peekLast()).getPrevHash()) // Blockchain last block hash == Next block previous hash
-                    || !StringUtil.applySha256(Objects.requireNonNull(bc.peekLast()).hashableString()).substring(0, hashZeros).equals("0".repeat(hashZeros))) { // Next block hash zeros == required zeros
-                return;
-            }
-        }
-        blockchain.add(bc.removeLast());
+//        // IS THIS CHECK NECESSARY?
+//        if (!blockchain.isEmpty()) { // Ensure that adding the next block will keep the Blockchain valid
+//            if (!StringUtil.applySha256(blockchain.peekLast().hashableString()).equals(Objects.requireNonNull(bc.peekLast()).getPrevHash()) // Hash of the last block in Blockchain == Next block previous hash
+//                    || !StringUtil.applySha256(Objects.requireNonNull(bc.peekLast()).hashableString()).substring(0, hashZeros).equals("0".repeat(hashZeros))) { // New block hash zeros == required zeros
+//                return;
+//            }
+//        }
+        blockchain.add(bc.removeLast()); // Add new block to Blockchain
+        if (!messages.isEmpty()) Objects.requireNonNull(blockchain.peekLast()).addMessages(); // Add messages to new block if any were sent during mining
         System.out.println(blockchain.peekLast());
         if (hashDuration < hashTimeMin) { // Regulate mining duration by updating required zeros at start of a hash
             hashZeros++;
@@ -56,12 +58,12 @@ public class Blockchain {
         try { // Blockchain.txt guaranteed to exist due to loading/creating the file before generating blocks
             SerializationUtils.serialize(blockchain, "Blockchain.txt");
         } catch (IOException ioException) {
+            System.out.println("UNABLE TO SAVE TO FILE\n");
             ioException.printStackTrace();
-            System.out.println("UNABLE TO SAVE TO FILE");
         }
     }
 
-    public static boolean validateRecursive() {
+    public static boolean validateRecursive() { // BREAKS SOMETIMES?
         if (blockchain.peekLast() == null) { // BC: Empty Blockchain
             return true;
         } else {
@@ -92,37 +94,11 @@ public class Blockchain {
         }
     }
 
-    public static void main(String[] args) {
-        // Work with existing file or create one if necessary
-        File blockchainFile = new File("Blockchain.txt");
-        if (!blockchainFile.isFile()) { // If file doesn't exist, create a file
-            try {
-                System.out.println(blockchainFile.createNewFile() ? "FILE CREATED" : "UNABLE TO CREATE FILE");
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
+    public static void printBlockchain() {
+        for (Block b : blockchain) {
+            System.out.println("vvvvvvvvvvv");
+            System.out.print(b);
+            System.out.println("\n^^^^^^^^^^^\n");
         }
-        // Load blockchain from file
-        try {
-            blockchain = (LinkedList<Block>) SerializationUtils.deserialize("Blockchain.txt");
-            if (!validateRecursive()) {
-                blockchain = new LinkedList<>();
-            }
-        } catch (EOFException eof) {
-            System.out.println("FILE IS EMPTY");
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        // Mimic several entities mining at the same time by submitting several CreateBlockTasks to an Executor
-        int miners = 5;
-        blockGoal = 5;
-        ExecutorService executor = Executors.newFixedThreadPool(miners);
-        for (int i = 0; i < blockGoal; i++) {
-            executor.submit(new CreateBlockTask());
-        }
-        executor.shutdown();
-
-        clearBlockchain();
     }
 }
