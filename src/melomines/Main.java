@@ -1,3 +1,5 @@
+package melomines;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -5,7 +7,6 @@ import java.util.LinkedList;
 
 public class Main {
     public static void main(String[] args) {
-
         // Work with existing file or create one if necessary
         File blockchainFile = new File("Blockchain.txt");
         if (!blockchainFile.isFile()) { // If file doesn't exist, create a file
@@ -29,13 +30,16 @@ public class Main {
             e.printStackTrace();
         }
 
-        // Submit several CreateBlockTasks to an Executor to mimic multiple miners
+        // Submit several CreateBlockTasks to an Executor to simulate multiple miners
         int miners = 5;
         Blockchain.blockGoal = 10;
 
         ExecutorUtils.startMining(miners);
         ExecutorUtils.shutdownAndAwaitTermination();
 
+        Blockchain.validateMessages();
         Blockchain.clearBlockchain();
+        PropertiesUtils.clearPrivateFile();
+        PropertiesUtils.clearPublicFile();
     }
 }

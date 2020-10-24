@@ -1,3 +1,5 @@
+package melomines;
+
 import java.io.*;
 
 class SerializationUtils {

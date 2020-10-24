@@ -1,3 +1,5 @@
+package melomines;
+
 import java.util.Random;
 
 public class MessageFactory {
@@ -27,7 +29,6 @@ public class MessageFactory {
 
     public static void generateMessage() {
         Random r = new Random();
-//        System.out.println("MESSAGE SENT");
         Blockchain.messages.add(new Message(senders[r.nextInt(senders.length)], messageContent[r.nextInt(messageContent.length)]));
     }
 
@@ -42,3 +43,5 @@ public class MessageFactory {
         }
     }
 }
+
+enum Person { JOHN, JACOB, JINGLEHEIMER, SCHMIDT }
