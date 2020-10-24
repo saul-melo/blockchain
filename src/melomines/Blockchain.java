@@ -1,3 +1,4 @@
+package melomines;
 /**
  * A Blockchain implementation designed to be easily applied to a wide variety of applications
  *
@@ -63,7 +64,7 @@ public class Blockchain {
         }
     }
 
-    public static boolean validateRecursive() { // BREAKS SOMETIMES?
+    public static boolean validateRecursive() {
         if (blockchain.peekLast() == null) { // BC: Empty Blockchain
             return true;
         } else {
@@ -81,6 +82,28 @@ public class Blockchain {
                 return validateRecursiveHelper(blockchain.get(blockchain.indexOf(curBlock) - 1));
             }
         }
+    }
+
+    // Check that each message in each block of the blockchain has a valid message ID, meaning it is greater than the highest messageID of the message in the previous block with messages
+    public static void validateMessages() {
+        List<Message> invalid = new ArrayList<>();
+        int prevHighest = -1;
+        int curHighest = -1;
+        for (Block b : blockchain) {
+            if (!b.getBlockMessages().isEmpty()) {
+                for (Message m : b.getBlockMessages()) {
+                    if (m.getId() <= prevHighest) {
+                        invalid.add(m);
+                        continue;
+                    }
+                    if (m.getId() > curHighest) {
+                        curHighest = m.getId();
+                    }
+                }
+                prevHighest = curHighest;
+            }
+        }
+        System.out.println(invalid.isEmpty() ? "ALL MESSAGES HAVE VALID ID" : "INVALID MESSAGES:\n" + invalid);
     }
 
     public static void clearBlockchain() {

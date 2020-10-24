@@ -1,3 +1,5 @@
+package melomines;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
