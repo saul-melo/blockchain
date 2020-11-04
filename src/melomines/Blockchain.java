@@ -16,7 +16,7 @@ public class Blockchain {
     private final static int hashTimeMin = 1;
     private final static int hashTimeMax = 2;
 
-    public static List<Message> messages = new ArrayList<>();
+    public static List<Transaction> transactions = new ArrayList<>();
 
     // Given an instance of the Blockchain, mines for the next block to add to the Blockchain. Stops early if the next block is added by another call of createBlock before it succeeds.
     public synchronized static void createBlock(LinkedList<Block> bc) { // Synchronized to prevent simultaneous updating of the Blockchain
@@ -36,24 +36,26 @@ public class Blockchain {
         }
         int hashDuration = Math.toIntExact((System.currentTimeMillis() - start) / 1000);
         Objects.requireNonNull(bc.peekLast()).setHashingTime(Math.toIntExact(hashDuration));
-//        // IS THIS CHECK NECESSARY?
-//        if (!blockchain.isEmpty()) { // Ensure that adding the next block will keep the Blockchain valid
-//            if (!StringUtil.applySha256(blockchain.peekLast().hashableString()).equals(Objects.requireNonNull(bc.peekLast()).getPrevHash()) // Hash of the last block in Blockchain == Next block previous hash
-//                    || !StringUtil.applySha256(Objects.requireNonNull(bc.peekLast()).hashableString()).substring(0, hashZeros).equals("0".repeat(hashZeros))) { // New block hash zeros == required zeros
-//                return;
-//            }
-//        }
+        Objects.requireNonNull(bc.peekLast()).giveBlockReward(); // Reward miner who mined new block - REWARD TEMP BC NOT ACTUAL BC
         blockchain.add(bc.removeLast()); // Add new block to Blockchain
-        if (!messages.isEmpty()) Objects.requireNonNull(blockchain.peekLast()).addMessages(); // Add messages to new block if any were sent during mining
+        if (!transactions.isEmpty()) Objects.requireNonNull(blockchain.peekLast()).addTransactions(); // Add transactions to new block if any were made during mining
         System.out.println(blockchain.peekLast());
         if (hashDuration < hashTimeMin) { // Regulate mining duration by updating required zeros at start of a hash
-            hashZeros++;
-            System.out.println("N was increased to " + hashZeros);
+            if (hashZeros < 5) {
+                hashZeros++;
+                System.out.println("N was increased to " + hashZeros);
+            } else {
+                System.out.println("LIMIT UNDER 6 - N STAYS SAME");
+            }
         } else if (hashDuration > hashTimeMax) {
             hashZeros--;
             System.out.println("N was decreased to " + hashZeros);
         } else {
             System.out.println("N stays the same");
+        }
+        System.out.println();
+        for (Miner m : Miner.getMiners()) { // Calculated by BC
+            System.out.println(m.getId() + " : " + calculateBalance(m));
         }
         System.out.println();
         try { // Blockchain.txt guaranteed to exist due to loading/creating the file before generating blocks
@@ -62,6 +64,25 @@ public class Blockchain {
             System.out.println("UNABLE TO SAVE TO FILE\n");
             ioException.printStackTrace();
         }
+    }
+
+    public static double calculateBalance(Miner miner) {
+        int minerID = miner.getId();
+        double curBalance = miner.getStartingBalance();
+        for (Block b : blockchain) {
+            if (minerID == b.getRewardedMinerID()) {
+                curBalance += 6.25;
+            }
+            for (Transaction t : b.getBlockTransactions()) {
+                if (minerID == t.getRecipientID()) {
+                    curBalance += t.getAmountSent();
+                }
+                if (minerID == t.getSenderID()) {
+                    curBalance -= t.getAmountSent();
+                }
+            }
+        }
+        return curBalance;
     }
 
     public static boolean validateRecursive() {
@@ -84,14 +105,14 @@ public class Blockchain {
         }
     }
 
-    // Check that each message in each block of the blockchain has a valid message ID, meaning it is greater than the highest messageID of the message in the previous block with messages
-    public static void validateMessages() {
-        List<Message> invalid = new ArrayList<>();
+    // Check that each transaction in each block of the blockchain has a valid ID, meaning it is greater than the highest ID of the transaction in the previous block with transactions
+    public static void validateTransactions() {
+        List<Transaction> invalid = new ArrayList<>();
         int prevHighest = -1;
         int curHighest = -1;
         for (Block b : blockchain) {
-            if (!b.getBlockMessages().isEmpty()) {
-                for (Message m : b.getBlockMessages()) {
+            if (!b.getBlockTransactions().isEmpty()) {
+                for (Transaction m : b.getBlockTransactions()) {
                     if (m.getId() <= prevHighest) {
                         invalid.add(m);
                         continue;
@@ -103,7 +124,7 @@ public class Blockchain {
                 prevHighest = curHighest;
             }
         }
-        System.out.println(invalid.isEmpty() ? "ALL MESSAGES HAVE VALID ID" : "INVALID MESSAGES:\n" + invalid);
+        System.out.println(invalid.isEmpty() ? "ALL TRANSACTIONS HAVE VALID ID" : "INVALID TRANSACTIONS:\n" + invalid);
     }
 
     public static void clearBlockchain() {

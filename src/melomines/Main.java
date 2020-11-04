@@ -31,13 +31,16 @@ public class Main {
         }
 
         // Submit several CreateBlockTasks to an Executor to simulate multiple miners
-        int miners = 5;
+        int minersCount = 5;
         Blockchain.blockGoal = 10;
 
-        ExecutorUtils.startMining(miners);
+        Miner.createMiners();
+
+        ExecutorUtils.startMining(minersCount);
         ExecutorUtils.shutdownAndAwaitTermination();
 
-        Blockchain.validateMessages();
+        System.out.println();
+        Blockchain.validateTransactions();
         Blockchain.clearBlockchain();
         PropertiesUtils.clearPrivateFile();
         PropertiesUtils.clearPublicFile();

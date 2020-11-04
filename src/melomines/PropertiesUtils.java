@@ -8,7 +8,7 @@ import java.util.Properties;
 public class PropertiesUtils {
     public static void loadKeys(KeyType type) throws IOException {
         GenerateKeys.props = new Properties();
-        String path = "/Users/melo/Desktop/Coding/GitHub/MyBlockchain/";
+        String path = "/Users/melo/Desktop/Code/GitHub/MyBlockchain/";
         if (type == KeyType.PRIVATE) {
             path = path.concat("privateKeys.properties");
         } else {
@@ -21,14 +21,14 @@ public class PropertiesUtils {
 
     public static void printPublicKeySet() throws IOException {
         Properties p = new Properties();
-        BufferedInputStream stream = new BufferedInputStream(new FileInputStream("/Users/melo/Desktop/Coding/GitHub/MyBlockchain/publicKeys.properties"));
+        BufferedInputStream stream = new BufferedInputStream(new FileInputStream("/Users/melo/Desktop/Code/GitHub/MyBlockchain/publicKeys.properties"));
         p.load(stream);
         p.entrySet().forEach(System.out::println);
     }
 
     public static void printPrivateKeySet() throws IOException {
         Properties p = new Properties();
-        BufferedInputStream stream = new BufferedInputStream(new FileInputStream("/Users/melo/Desktop/Coding/GitHub/MyBlockchain/privateKeys.properties"));
+        BufferedInputStream stream = new BufferedInputStream(new FileInputStream("/Users/melo/Desktop/Code/GitHub/MyBlockchain/privateKeys.properties"));
         p.load(stream);
         p.entrySet().forEach(System.out::println);
     }

@@ -7,23 +7,31 @@ import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Properties;
 
-public class Message implements Serializable {
+public class Transaction implements Serializable {
     private static int idCounter = 1;
 
     private final int id;
-    private final Person sender;
-    private final String content;
+    private final Miner sender;
+    private final Miner recipient;
+    private final double amountSent;
+    private final String statement;
     private final byte[] signature;
     private PublicKey publicKey;
 
-    public Message(Person sender, String content) {
-        this.id = idCounter++;
+    public Transaction(Miner sender, Miner recipient, double amountSent) {
+        if (sender.getId() == -1) { // Give reward transactions ID = -1 since separate from regular transactions
+            id = -1;
+        } else {
+            this.id = idCounter++;
+        }
         this.sender = sender;
-        this.content = content;
-        makeMessageKeys();
+        this.recipient = recipient;
+        this.amountSent = amountSent;
+        this.statement = this.sender + " sent " + this.amountSent + " to " + this.recipient;
+        makeTransactionKeys();
         byte[] tempSignature;
         try {
-            tempSignature = sign(this.content);
+            tempSignature = sign(statement);
         } catch (Exception e) {
             System.out.println(id + " - UNABLE TO MAKE SIGNATURE");
             tempSignature = new byte[0];
@@ -33,10 +41,13 @@ public class Message implements Serializable {
     }
 
     public int getId() { return id; }
+    public int getSenderID() { return sender.getId(); }
+    public int getRecipientID() { return recipient.getId(); }
+    public double getAmountSent() { return amountSent; }
 
     // SIGNING METHODS
-    // Generate and store key pair for the message
-    public void makeMessageKeys() {
+    // Generate and store key pair for the transaction
+    public void makeTransactionKeys() {
         GenerateKeys gk;
         try {
             gk = new GenerateKeys();
@@ -45,7 +56,7 @@ public class Message implements Serializable {
             gk.writeToProperties(KeyType.PRIVATE, gk.getPrivateKey().getEncoded(), id);
             gk.writeToProperties(KeyType.PUBLIC, gk.getPublicKey().getEncoded(), id);
         } catch (NoSuchAlgorithmException | IOException e) {
-            System.out.println(id + "FAILED TO MAKE MESSAGE KEYS");
+            System.out.println(id + "FAILED TO MAKE KEYS");
             System.err.println(e.getMessage());
         }
     }
@@ -61,7 +72,7 @@ public class Message implements Serializable {
     // Retrieve the Private Key from privateKeys.properties
     public PrivateKey getPrivate() throws Exception {
         Properties props = new Properties();
-        FileInputStream stream = new FileInputStream("/Users/melo/Desktop/Coding/GitHub/MyBlockchain/privateKeys.properties");
+        FileInputStream stream = new FileInputStream("/Users/melo/Desktop/Code/GitHub/MyBlockchain/privateKeys.properties");
         props.load(stream);
         stream.close();
         byte[] keyBytes = Base64.decodeBase64(props.getProperty(String.valueOf(id)));
@@ -72,11 +83,11 @@ public class Message implements Serializable {
 
     // VERIFY METHODS
     public PublicKey getPublicKey() { return publicKey; }
-    public String getContent() { return content; }
+    public String getStatement() { return statement; }
     public byte[] getSignature() { return signature; }
 
     @Override
     public String toString() {
-        return sender + ": " + content;
+        return statement;
     }
 }

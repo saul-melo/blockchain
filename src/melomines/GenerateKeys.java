@@ -44,12 +44,8 @@ public class GenerateKeys {
         props.setProperty(String.valueOf(id), keyString);
         if (type == KeyType.PRIVATE) {
             props.store(new FileWriter("privateKeys.properties"), "Private Keys");
-//            System.out.println("PRIVATE AFTER STORING:");
-//            PropertiesUtils.printPrivateKeySet();
         } else {
             props.store(new FileWriter("publicKeys.properties"), "Public Keys");
-//            System.out.println("PUBLIC AFTER STORING:");
-//            PropertiesUtils.printPublicKeySet();
         }
     }
 }
