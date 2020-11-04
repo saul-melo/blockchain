@@ -10,59 +10,65 @@ class Block implements Serializable {
     private final long timeStamp;
     private int magicNum;
     private int hashingTime;
-    private final String miner;
+    private final int minerNumber;
+    private Transaction reward; // Reward transactions have ID = -1
 
-    private String messageData = "No messages\n";
-    private List<Message> blockMessages = new ArrayList<>();
+    private String transactionData = "No transactions\n";
+    private List<Transaction> blockTransactions = new ArrayList<>();
 
     public Block(String prevHash, int id, long timeStamp, int magicNum) {
         this.prevHash = prevHash;
         this.id = id;
         this.timeStamp = timeStamp;
         this.magicNum = magicNum;
-        String threadNumber = Thread.currentThread().getName();
-        miner = threadNumber.substring(threadNumber.length() - 1);
+        String threadName = Thread.currentThread().getName();
+        minerNumber = Integer.parseInt(threadName.substring(threadName.length() - 1));
     }
 
     public String getPrevHash() { return prevHash; }
-    public List<Message> getBlockMessages() { return blockMessages; }
+    public List<Transaction> getBlockTransactions() { return blockTransactions; }
+    public int getRewardedMinerID() { return reward.getRecipientID(); }
     public void setMagicNum(int magicNum) { this.magicNum = magicNum; }
     public void setHashingTime(int hashingTime) { this.hashingTime = hashingTime; }
 
-    public void addMessages() {
-        // Verify that all messages being added to the block have valid message IDs
-        int highestPrevMessageID = -1;
+    public void addTransactions() {
+        // Verify that all transactions being added to the block have valid transaction IDs
+        int highestPrevTransactionID = -1;
         int curIndex = Blockchain.blockchain.size() - 1;
-        List<Message> blockMessageList;
+        List<Transaction> blockTransactionList;
         for (int i = curIndex; i >= 0; i--) {
-            blockMessageList = Blockchain.blockchain.get(i).getBlockMessages();
-            if (!blockMessageList.isEmpty()) {
-                highestPrevMessageID = blockMessageList.get(blockMessageList.size() - 1).getId(); // Assuming messages are entered into blockMessages in order of message ID
+            blockTransactionList = Blockchain.blockchain.get(i).getBlockTransactions();
+            if (!blockTransactionList.isEmpty()) {
+                highestPrevTransactionID = blockTransactionList.get(blockTransactionList.size() - 1).getId(); // Assuming transactions are entered into blockTransactions in ascending ID order
                 break;
             }
         }
-        if (highestPrevMessageID != -1) { // Remove any messages in the Blockchain messages list that have an ID lower than the message ID of the most recent message in a previous block
-            for (Message m : Blockchain.messages) {
-                if (m.getId() < highestPrevMessageID) {
-                    Blockchain.messages.remove(m);
-                    System.out.println("REMOVED DUE TO INVALID MESSAGE ID:");
+        if (highestPrevTransactionID != -1) { // Remove any transactions in the Blockchain transaction list that have an ID lower than the ID of the most recent transaction in a previous block
+            for (Transaction m : Blockchain.transactions) {
+                if (m.getId() <= highestPrevTransactionID) {
+                    Blockchain.transactions.remove(m);
+                    System.out.println("REMOVED DUE TO INVALID TRANSACTION ID:");
                     System.out.println(m);
                 }
             }
         }
-        blockMessages = new ArrayList<>(Blockchain.messages);
-        messageData = "";
-        for (Message m : blockMessages) {
-            messageData = messageData.concat(m.toString() + "\n");
+        blockTransactions = new ArrayList<>(Blockchain.transactions);
+        transactionData = "";
+        for (Transaction m : blockTransactions) {
+            transactionData = transactionData.concat(m.toString() + "\n");
         }
-        Blockchain.messages.clear();
+        Blockchain.transactions.clear();
+    }
+
+    public void giveBlockReward() {
+        reward = Miner.rewardMiner(Miner.getMiner(minerNumber));
     }
 
     public String hashableString() { return prevHash + id + timeStamp + magicNum; }
 
     @Override
     public String toString() {
-        return String.format("Block:\nCreated by miner # %s\nId: %d\nTimestamp: %d\nMagic number: %d\nHash of the previous block:\n%s\nHash of the block:\n%s\nBlock data:\n%sBlock was generating for %d seconds",
-                miner, id, timeStamp, magicNum, prevHash, StringUtil.applySha256(hashableString()), messageData, hashingTime);
+        return String.format("Block:\nCreated by: miner%d\n%s\nId: %d\nTimestamp: %d\nMagic number: %d\nHash of the previous block:\n%s\nHash of the block:\n%s\nBlock data:\n%sBlock was generating for %d seconds",
+                minerNumber, reward.getStatement(), id, timeStamp, magicNum, prevHash, StringUtil.applySha256(hashableString()), transactionData, hashingTime);
     }
 }

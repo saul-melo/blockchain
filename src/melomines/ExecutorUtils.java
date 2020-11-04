@@ -8,10 +8,10 @@ public class ExecutorUtils {
     static ExecutorService executorMining;
     static int allotedTime = 60;
 
-    // 1st task submitted is message simulator, rest are the "miners"
+    // 1st task submitted is transaction simulator, rest are the "miners"
     public static void startMining(int minersCount) {
-        executorMining = Executors.newFixedThreadPool(minersCount + 1);
-        executorMining.submit(MessageFactory::generateConvo);
+        executorMining = Executors.newFixedThreadPool(minersCount + 1); // +1 for transaction sim thread
+        executorMining.submit(TransactionFactory::transactionSim);
         for (int i = 0; i < minersCount; i++) {
             executorMining.submit(new CreateBlockTask());
         }
