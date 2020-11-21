@@ -36,16 +36,16 @@ public class Blockchain {
         }
         int hashDuration = Math.toIntExact((System.currentTimeMillis() - start) / 1000);
         Objects.requireNonNull(bc.peekLast()).setHashingTime(Math.toIntExact(hashDuration));
-        Objects.requireNonNull(bc.peekLast()).giveBlockReward(); // Reward miner who mined new block - REWARD TEMP BC NOT ACTUAL BC
+        Objects.requireNonNull(bc.peekLast()).giveBlockReward(); // Reward miner who mined new block
         blockchain.add(bc.removeLast()); // Add new block to Blockchain
-        if (!transactions.isEmpty()) Objects.requireNonNull(blockchain.peekLast()).addTransactions(); // Add transactions to new block if any were made during mining
+        if (!transactions.isEmpty()) Objects.requireNonNull(blockchain.peekLast()).addTransactions(); // Add Transactions to new block if any were made during mining
         System.out.println(blockchain.peekLast());
         if (hashDuration < hashTimeMin) { // Regulate mining duration by updating required zeros at start of a hash
             if (hashZeros < 5) {
                 hashZeros++;
                 System.out.println("N was increased to " + hashZeros);
             } else {
-                System.out.println("LIMIT UNDER 6 - N STAYS SAME");
+                System.out.println("N stays the same (N < 6)"); // Limit N to ensure mining time does not exceed timeout
             }
         } else if (hashDuration > hashTimeMax) {
             hashZeros--;
@@ -54,8 +54,8 @@ public class Blockchain {
             System.out.println("N stays the same");
         }
         System.out.println();
-        for (Miner m : Miner.getMiners()) { // Calculated by BC
-            System.out.println(m.getId() + " : " + calculateBalance(m));
+        for (Miner m : Miner.getMiners()) {
+            System.out.println(m.getId() + " : " + calculateBalance(m)); // Print Miner balances after a new block is added to the Blockchain
         }
         System.out.println();
         try { // Blockchain.txt guaranteed to exist due to loading/creating the file before generating blocks
@@ -70,14 +70,14 @@ public class Blockchain {
         int minerID = miner.getId();
         double curBalance = miner.getStartingBalance();
         for (Block b : blockchain) {
-            if (minerID == b.getRewardedMinerID()) {
+            if (b.getRewardedMinerID() == minerID) {
                 curBalance += 6.25;
             }
             for (Transaction t : b.getBlockTransactions()) {
-                if (minerID == t.getRecipientID()) {
+                if (t.getRecipientID() == minerID) {
                     curBalance += t.getAmountSent();
                 }
-                if (minerID == t.getSenderID()) {
+                if (t.getSenderID() == minerID) {
                     curBalance -= t.getAmountSent();
                 }
             }
@@ -86,7 +86,7 @@ public class Blockchain {
     }
 
     public static boolean validateRecursive() {
-        if (blockchain.peekLast() == null) { // BC: Empty Blockchain
+        if (blockchain.peekLast() == null) { // Base Case: Empty Blockchain
             return true;
         } else {
             return validateRecursiveHelper(blockchain.peekLast());

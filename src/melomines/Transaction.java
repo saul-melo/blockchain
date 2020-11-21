@@ -19,8 +19,8 @@ public class Transaction implements Serializable {
     private PublicKey publicKey;
 
     public Transaction(Miner sender, Miner recipient, double amountSent) {
-        if (sender.getId() == -1) { // Give reward transactions ID = -1 since separate from regular transactions
-            id = -1;
+        if (sender.getId() == Integer.MIN_VALUE) { // Give reward Transactions ID = -1 since separate from regular Transactions
+            this.id = -1;
         } else {
             this.id = idCounter++;
         }
