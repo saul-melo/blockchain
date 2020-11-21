@@ -26,7 +26,7 @@ public class Main {
         } catch (EOFException eof) {
             System.out.println("FILE IS EMPTY");
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("EXCEPTION");
+            System.out.println("LOAD BLOCKCHAIN EXCEPTION");
             e.printStackTrace();
         }
 
